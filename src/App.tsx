@@ -1,35 +1,60 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react";
+import { createClient } from "./mqtt/createClient";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [percentage, setPercentage] = useState(0);
+  const [time, setTime] = useState(0);
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = time % 60;
+    return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+  };
+
+  useEffect(() => {
+    const client = createClient();
+    console.log(client);
+    client.on("message", (topic, message) => {
+      const messageAsString = message.toString();
+      setTime(+messageAsString);
+    });
+
+    return () => {
+      client.end();
+    };
+  }, []);
+
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     setPercentage((prevPercentage) => {
+  //       console.log(prevPercentage);
+  //       if (prevPercentage >= 100) {
+  //         clearInterval(interval);
+  //         return 0;
+  //       }
+  //       return prevPercentage + 1;
+  //     });
+  //   }, 1000);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="flex h-screen w-screen items-center justify-center">
+      <div className="flex flex-col max-w-[80%]">
+        <h1 className="text-3xl">
+          Hello Vite! {import.meta.env.VITE_BACKEND_URL}
+        </h1>
+        {formatTime(time)}
+
+        <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+          <div
+            className="bg-blue-600 h-2.5 rounded-full"
+            style={{ width: `${percentage}%` }}
+          ></div>
+        </div>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    </div>
+  );
 }
 
-export default App
+export default App;
